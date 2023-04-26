@@ -3,7 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
-
+	"log"
+	"strconv"
+	"bufio"
+	"regexp"
+	"strings"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textarea"
@@ -16,6 +20,10 @@ const (
 	maxInputs     = 6
 	minInputs     = 1
 	helpHeight    = 5
+)
+var (
+	maxWidth      = 3
+	maxHeight     = maxInputs / maxWidth
 )
 
 var (
@@ -43,7 +51,7 @@ var (
 )
 
 type keymap = struct {
-	next, prev, add, remove, quit key.Binding
+	next, prev, add, write, remove, quit key.Binding
 }
 
 func newTextarea() textarea.Model {
@@ -100,11 +108,69 @@ func newModel() model {
 				key.WithKeys("esc", "ctrl+c"),
 				key.WithHelp("esc", "quit"),
 			),
+			write: key.NewBinding(
+				key.WithKeys("ctrl+s"),
+				key.WithHelp("ctrl+s", "write all stickies to file"),
+			),
 		},
 	}
 	for i := 0; i < initialInputs; i++ {
 		m.inputs[i] = newTextarea()
 	}
+	// We need to see if this file isn't empty and
+	// if theres stuff we need to put it into the stickies!
+	file, err := os.Open("file.txt")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	var total_lines []string
+	for scanner.Scan() {
+		total_lines = append(total_lines, scanner.Text())
+	}
+	if err := scanner.Err(); err!=nil {
+		fmt.Println(err)
+	}
+	total_contents := ""
+	for idl := range total_lines{
+		total_contents = total_contents + total_lines[idl] + "\n"
+	}
+	
+	
+	// Parse integer delimiters
+	re := regexp.MustCompile(`(?m)^\d+$`)
+	delimMatches := re.FindAllString(total_contents, -1)
+	delimiters := make([]int, len(delimMatches))
+	for i, match := range delimMatches {
+		delimiters[i], _ = strconv.Atoi(match)
+	}
+
+	// Parse blocks of text
+	blockRegex := regexp.MustCompile(`\d+(?:.*(\n((?:.*\n)))+?)`)
+	blockMatches := blockRegex.FindAllStringSubmatch(total_contents, -1)
+	blocks := make([]string, len(blockMatches))
+	for i, match := range blockMatches {
+		blocks[i] = strings.TrimSpace(match[1])
+	}
+
+	fmt.Println(blocks)
+	fmt.Println(delimiters)
+
+	max_readIn_stickies := 0
+	for idd := range delimiters {
+		if delimiters[idd] > max_readIn_stickies {
+			max_readIn_stickies = delimiters[idd]
+		}
+	}
+	for i:=0; i<max_readIn_stickies; i++ {
+		m.inputs = append(m.inputs, newTextarea())
+	}
+
+	for idb, block := range blocks {
+		m.inputs[delimiters[idb]].SetValue(block)
+	}
+
 	m.inputs[m.focus].Focus()
 	m.updateKeybindings()
 	return m
@@ -148,10 +214,36 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.focus > len(m.inputs)-1 {
 				m.focus = len(m.inputs) - 1
 			}
+		case key.Matches(msg, m.keymap.write):
+			var total_contents []string 
+			for i := range m.inputs {
+				total_contents = append(total_contents, m.inputs[i].Value())
+			}
+			f, err := os.Create("file.txt")
+			if err != nil {
+				log.Fatal(err)
+			}
+			// remember to close the file
+			defer f.Close()
+			for idl, line := range total_contents {
+				_, err := f.WriteString(strconv.Itoa(idl) + "\n" + line + "\n")
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
 		}
 	case tea.WindowSizeMsg:
 		m.height = msg.Height
 		m.width = msg.Width
+		//check if terminal is portrait or landscape
+		if (msg.Height > msg.Width){
+			//portrait mode
+			maxHeight = 3
+			maxWidth = 2
+		}	else {
+			maxHeight = 2
+			maxWidth = 3
+		}
 	}
 
 	m.updateKeybindings()
@@ -169,8 +261,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) sizeInputs() {
 	for i := range m.inputs {
-		m.inputs[i].SetWidth(m.width / len(m.inputs))
-		m.inputs[i].SetHeight(m.height - helpHeight)
+		divisor := 0.0
+		m.inputs[i].SetWidth((m.width) / maxWidth)
+		if len(m.inputs) <= maxWidth {
+			divisor = 1.1 //full height ish
+		} else {
+			divisor = 2.1
+		}
+		m.inputs[i].SetHeight(int(float64(m.height-helpHeight) / divisor))
 	}
 }
 
@@ -185,15 +283,21 @@ func (m model) View() string {
 		m.keymap.prev,
 		m.keymap.add,
 		m.keymap.remove,
+		m.keymap.write,
 		m.keymap.quit,
 	})
 
-	var views []string
-	for i := range m.inputs {
-		views = append(views, m.inputs[i].View())
-	}
+	var viewsX []string
+	var viewsY []string
 
-	return lipgloss.JoinHorizontal(lipgloss.Top, views...) + "\n\n" + help
+	for i := range m.inputs {
+		if i < maxWidth {
+			viewsX = append(viewsX, m.inputs[i].View())
+		} else {
+			viewsY = append(viewsY, m.inputs[i].View())
+		}
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Top, viewsX...) + "\n" + lipgloss.JoinVertical(lipgloss.Bottom, lipgloss.JoinHorizontal(lipgloss.Top, viewsY...)) + "\n\n" + help
 }
 
 func main() {
