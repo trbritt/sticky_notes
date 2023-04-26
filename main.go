@@ -1,15 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"compress/gzip"
 	"encoding/gob"
+	"fmt"
+	"os"
+	"os/exec"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 )
 
 const (
@@ -307,6 +309,19 @@ func (m model) View() string {
 }
 
 func main() {
+	termenv.SetWindowTitle("gonotes")
+	cmd := exec.Command("gnome-terminal")
+
+	writer, err := cmd.StdinPipe()
+	if err != nil {
+		panic(err)
+	}
+	tea.WithOutput(writer)
+	// start the new terminal window
+	err = cmd.Start()
+	if err != nil {
+		panic(err)
+	}
 	if _, err := tea.NewProgram(newModel(), tea.WithAltScreen()).Run(); err != nil {
 		fmt.Println("Error while running program:", err)
 		os.Exit(1)
