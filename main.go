@@ -3,11 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"log"
-	"strconv"
-	"bufio"
-	"regexp"
-	"strings"
+	"compress/gzip"
+	"encoding/gob"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textarea"
@@ -82,6 +79,7 @@ type model struct {
 	inputs []textarea.Model
 	focus  int
 }
+var fname = "/home/"+ os.Getenv("USER") +"/.cache/gonotes.gogz"
 
 func newModel() model {
 	m := model{
@@ -119,58 +117,58 @@ func newModel() model {
 	}
 	// We need to see if this file isn't empty and
 	// if theres stuff we need to put it into the stickies!
-	file, err := os.Open("file.txt")
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	var total_lines []string
-	for scanner.Scan() {
-		total_lines = append(total_lines, scanner.Text())
-	}
-	if err := scanner.Err(); err!=nil {
-		fmt.Println(err)
-	}
-	total_contents := ""
-	for idl := range total_lines{
-		total_contents = total_contents + total_lines[idl] + "\n"
-	}
-	
-	
-	// Parse integer delimiters
-	re := regexp.MustCompile(`(?m)^\d+$`)
-	delimMatches := re.FindAllString(total_contents, -1)
-	delimiters := make([]int, len(delimMatches))
-	for i, match := range delimMatches {
-		delimiters[i], _ = strconv.Atoi(match)
-	}
+	if _, err := os.Stat(fname); os.IsNotExist(err) {
+		// file does not exist
+		println("File does not exist; creating clean notes :)")
+	} else {
+		// file exists
+		// println("File exists")
+		// read from the compressed binary file
+		// open the gzip file for reading
 
-	// Parse blocks of text
-	blockRegex := regexp.MustCompile(`\d+(?:.*(\n((?:.*\n)))+?)`)
-	blockMatches := blockRegex.FindAllStringSubmatch(total_contents, -1)
-	blocks := make([]string, len(blockMatches))
-	for i, match := range blockMatches {
-		blocks[i] = strings.TrimSpace(match[1])
-	}
+		gzFile, err := os.Open(fname)
+		if err != nil {
+			panic(err)
+		}
+		defer gzFile.Close()
 
-	fmt.Println(blocks)
-	fmt.Println(delimiters)
+		// create a gzip reader
+		gzReader, err := gzip.NewReader(gzFile)
+		if err != nil {
+			panic(err)
+		}
+		defer gzReader.Close()
 
-	max_readIn_stickies := 0
-	for idd := range delimiters {
-		if delimiters[idd] > max_readIn_stickies {
-			max_readIn_stickies = delimiters[idd]
+		// create a binary decoder
+		decoder := gob.NewDecoder(gzReader)
+
+		// decode the slice of strings
+		var decodedStrs []string
+		err = decoder.Decode(&decodedStrs)
+		if err != nil {
+			panic(err)
+		}
+
+		// print the decoded slice of strings
+		max_not_empty := 0
+		for i:= range decodedStrs {
+			if decodedStrs[i] != "" {
+				if i > max_not_empty {
+					max_not_empty = i
+				}
+				// fmt.Println(i, " is not empty!")
+				// fmt.Println(decodedStrs[i])
+			}
+		}
+		// fmt.Println(max_not_empty)
+		for i:=0; i<max_not_empty; i++ {
+			m.inputs = append(m.inputs, newTextarea())
+		}
+		for i:= range m.inputs {
+			m.inputs[i].SetValue((decodedStrs[i]))
 		}
 	}
-	for i:=0; i<max_readIn_stickies; i++ {
-		m.inputs = append(m.inputs, newTextarea())
-	}
-
-	for idb, block := range blocks {
-		m.inputs[delimiters[idb]].SetValue(block)
-	}
-
+	
 	m.inputs[m.focus].Focus()
 	m.updateKeybindings()
 	return m
@@ -219,18 +217,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for i := range m.inputs {
 				total_contents = append(total_contents, m.inputs[i].Value())
 			}
-			f, err := os.Create("file.txt")
+			//write slice of strings to compressed binary
+			file, err := os.Create(fname)
 			if err != nil {
-				log.Fatal(err)
+				panic(err)
 			}
-			// remember to close the file
-			defer f.Close()
-			for idl, line := range total_contents {
-				_, err := f.WriteString(strconv.Itoa(idl) + "\n" + line + "\n")
-				if err != nil {
-					log.Fatal(err)
-				}
+			defer file.Close()
+
+			// create a gzip writer
+			gzWriter := gzip.NewWriter(file)
+			defer gzWriter.Close()
+
+			// create a binary encoder
+			encoder := gob.NewEncoder(gzWriter)
+
+			// encode the slice of strings
+			err = encoder.Encode(total_contents)
+			if err != nil {
+				panic(err)
 			}
+
 		}
 	case tea.WindowSizeMsg:
 		m.height = msg.Height
