@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
-	"os/exec"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textarea"
@@ -82,6 +81,7 @@ type model struct {
 	focus  int
 }
 var fname = "/home/"+ os.Getenv("USER") +"/.cache/gonotes.gogz"
+var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render
 
 func newModel() model {
 	m := model{
@@ -268,9 +268,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) sizeInputs() {
+	var widthDivisor int
+	if len(m.inputs) == 1 {
+		widthDivisor = 1
+	} else if len(m.inputs) == 2 {
+		widthDivisor = 2
+	} else {
+		widthDivisor = 3
+	}
+
 	for i := range m.inputs {
 		divisor := 0.0
-		m.inputs[i].SetWidth((m.width) / maxWidth)
+		m.inputs[i].SetWidth((m.width) / widthDivisor)
 		if len(m.inputs) <= maxWidth {
 			divisor = 1.1 //full height ish
 		} else {
@@ -294,7 +303,6 @@ func (m model) View() string {
 		m.keymap.write,
 		m.keymap.quit,
 	})
-
 	var viewsX []string
 	var viewsY []string
 
@@ -305,25 +313,20 @@ func (m model) View() string {
 			viewsY = append(viewsY, m.inputs[i].View())
 		}
 	}
-	return lipgloss.JoinHorizontal(lipgloss.Top, viewsX...) + "\n" + lipgloss.JoinVertical(lipgloss.Bottom, lipgloss.JoinHorizontal(lipgloss.Top, viewsY...)) + "\n\n" + help
+	content := lipgloss.JoinHorizontal(lipgloss.Top, viewsX...) + "\n" + lipgloss.JoinVertical(lipgloss.Bottom, lipgloss.JoinHorizontal(lipgloss.Top, viewsY...)) + "\n\n" + help
+	return content
 }
+
 
 func main() {
 	termenv.SetWindowTitle("gonotes")
-	cmd := exec.Command("gnome-terminal")
 
-	writer, err := cmd.StdinPipe()
-	if err != nil {
-		panic(err)
-	}
-	tea.WithOutput(writer)
-	// start the new terminal window
-	err = cmd.Start()
-	if err != nil {
-		panic(err)
-	}
-	if _, err := tea.NewProgram(newModel(), tea.WithAltScreen()).Run(); err != nil {
+	if _, err := tea.NewProgram(
+			newModel(), 
+			tea.WithAltScreen(),
+		).Run(); err != nil {
 		fmt.Println("Error while running program:", err)
 		os.Exit(1)
 	}
+	termenv.Reset()
 }
