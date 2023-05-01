@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	// "os/exec"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textarea"
@@ -19,9 +20,10 @@ const (
 	minInputs     = 1
 	helpHeight    = 5
 )
+
 var (
-	maxWidth      = 3
-	maxHeight     = maxInputs / maxWidth
+	maxWidth  = 3
+	maxHeight = maxInputs / maxWidth
 )
 
 var (
@@ -80,7 +82,8 @@ type model struct {
 	inputs []textarea.Model
 	focus  int
 }
-var fname = "/home/"+ os.Getenv("USER") +"/.cache/gonotes.gogz"
+
+var fname = "/home/" + os.Getenv("USER") + "/.cache/gonotes.gogz"
 var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render
 
 func newModel() model {
@@ -153,7 +156,7 @@ func newModel() model {
 
 		// print the decoded slice of strings
 		max_not_empty := 0
-		for i:= range decodedStrs {
+		for i := range decodedStrs {
 			if decodedStrs[i] != "" {
 				if i > max_not_empty {
 					max_not_empty = i
@@ -163,14 +166,14 @@ func newModel() model {
 			}
 		}
 		// fmt.Println(max_not_empty)
-		for i:=0; i<max_not_empty; i++ {
+		for i := 0; i < max_not_empty; i++ {
 			m.inputs = append(m.inputs, newTextarea())
 		}
-		for i:= range m.inputs {
+		for i := range m.inputs {
 			m.inputs[i].SetValue((decodedStrs[i]))
 		}
 	}
-	
+
 	m.inputs[m.focus].Focus()
 	m.updateKeybindings()
 	return m
@@ -215,7 +218,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.focus = len(m.inputs) - 1
 			}
 		case key.Matches(msg, m.keymap.write):
-			var total_contents []string 
+			var total_contents []string
 			for i := range m.inputs {
 				total_contents = append(total_contents, m.inputs[i].Value())
 			}
@@ -244,11 +247,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		m.width = msg.Width
 		//check if terminal is portrait or landscape
-		if (msg.Height > msg.Width){
+		if msg.Height > msg.Width {
 			//portrait mode
 			maxHeight = 3
 			maxWidth = 2
-		}	else {
+		} else {
 			maxHeight = 2
 			maxWidth = 3
 		}
@@ -295,6 +298,7 @@ func (m *model) updateKeybindings() {
 }
 
 func (m model) View() string {
+
 	help := m.help.ShortHelpView([]key.Binding{
 		m.keymap.next,
 		m.keymap.prev,
@@ -317,16 +321,15 @@ func (m model) View() string {
 	return content
 }
 
-
 func main() {
 	termenv.SetWindowTitle("gonotes")
+	termenv.SetBackgroundColor(termenv.RGBColor("#010d0e"))
 
 	if _, err := tea.NewProgram(
-			newModel(), 
-			tea.WithAltScreen(),
-		).Run(); err != nil {
+		newModel(),
+		tea.WithAltScreen(),
+	).Run(); err != nil {
 		fmt.Println("Error while running program:", err)
 		os.Exit(1)
 	}
-	termenv.Reset()
 }
