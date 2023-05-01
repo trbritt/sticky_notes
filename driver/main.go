@@ -3,9 +3,13 @@ package main
 import (
 	"compress/gzip"
 	"encoding/gob"
+	"errors"
+	"flag"
 	"fmt"
 	"os"
-	// "os/exec"
+	"strconv"
+	"time"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textarea"
@@ -82,9 +86,9 @@ type model struct {
 	inputs []textarea.Model
 	focus  int
 }
-
-var fname = "/home/" + os.Getenv("USER") + "/.cache/gonotes.gogz"
-var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render
+var stickyIdPtr = flag.Int("id", 0, "The ID of the sticky to generate")
+var tmp_dir = "/home/" + os.Getenv("USER") + "/.cache/gonotes/"
+var fname string
 
 func newModel() model {
 	m := model{
@@ -120,11 +124,19 @@ func newModel() model {
 	for i := 0; i < initialInputs; i++ {
 		m.inputs[i] = newTextarea()
 	}
+	// create tmp dir if it doesnt exist
+	if _, err := os.Stat(tmp_dir); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(tmp_dir, os.ModePerm)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 	// We need to see if this file isn't empty and
 	// if theres stuff we need to put it into the stickies!
 	if _, err := os.Stat(fname); os.IsNotExist(err) {
 		// file does not exist
 		println("File does not exist; creating clean notes :)")
+		time.Sleep(2*time.Second)
 	} else {
 		// file exists
 		// println("File exists")
@@ -303,6 +315,9 @@ func (m model) View() string {
 		m.keymap.next,
 		m.keymap.prev,
 		m.keymap.add,
+	})
+	help = help + "\n"
+	help = help + m.help.ShortHelpView([]key.Binding{
 		m.keymap.remove,
 		m.keymap.write,
 		m.keymap.quit,
@@ -325,6 +340,11 @@ func main() {
 	termenv.SetWindowTitle("gonotes")
 	termenv.SetBackgroundColor(termenv.RGBColor("#010d0e"))
 
+	flag.Parse() //get the value of the ID, put it to the pointer
+	fname = tmp_dir + "gonotes_" + strconv.Itoa(*stickyIdPtr)+ ".gogz"//
+
+	fmt.Println("fname", fname)
+	time.Sleep(2 * time.Second)
 	if _, err := tea.NewProgram(
 		newModel(),
 		tea.WithAltScreen(),
@@ -332,4 +352,5 @@ func main() {
 		fmt.Println("Error while running program:", err)
 		os.Exit(1)
 	}
+
 }
