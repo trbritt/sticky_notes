@@ -136,7 +136,7 @@ func newModel() model {
 	if _, err := os.Stat(fname); os.IsNotExist(err) {
 		// file does not exist
 		println("File does not exist; creating clean notes :)")
-		time.Sleep(2*time.Second)
+		time.Sleep(time.Second)
 	} else {
 		// file exists
 		// println("File exists")
@@ -343,8 +343,8 @@ func main() {
 	flag.Parse() //get the value of the ID, put it to the pointer
 	fname = tmp_dir + "gonotes_" + strconv.Itoa(*stickyIdPtr)+ ".gogz"//
 
-	fmt.Println("fname", fname)
-	time.Sleep(2 * time.Second)
+	// fmt.Println("fname", fname)
+	// time.Sleep(2 * time.Second)
 	if _, err := tea.NewProgram(
 		newModel(),
 		tea.WithAltScreen(),
