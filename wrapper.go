@@ -3,28 +3,47 @@ package main
 import (
 	"os/exec"
 	"os"
-
-    
 	"log"
+    "github.com/getlantern/systray"
     "fmt"
+    "time"
 )
-func main() {
-    out, err := exec.Command("/usr/bin/dconf", "read", "/org/gnome/terminal/legacy/profiles:/:54cf545b-ecbf-4289-b9dd-56f3381de31b/background-color").Output()
+func onReady() {
+	// systray.SetIcon(iconData)
+	systray.SetTitle("GoNotes")
+	systray.SetTooltip("Stickies")
 
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Printf("The color is %s\n", out)
+	mNewWindow := systray.AddMenuItem("Open new sticky", "Open a new instance of a sticky note")
+    systray.AddSeparator()
+    mQuitOrig := systray.AddMenuItem("Quit", "Quit the whole app")
+	go func() {
+		<-mQuitOrig.ClickedCh
+		fmt.Println("Requesting quit")
+		systray.Quit()
+		fmt.Println("Finished quitting")
+	}()
 	currentWorkingDirectory, errcwd := os.Getwd()
     if errcwd != nil {
         log.Fatal(errcwd)
     }
-	cmd := exec.Command("/usr/bin/gnome-terminal", "--window-with-profile","Default","--","bash","-c",currentWorkingDirectory+"/driver/gonotes_driver")
 
-    err = cmd.Run()
+	go func() {
+		for {
+			select {
+			case <-mNewWindow.ClickedCh:
+                cmd := exec.Command("/usr/bin/gnome-terminal","--geometry", "80x10","--","bash","-c",currentWorkingDirectory+"/driver/gonotes_driver")
+				if err := cmd.Start(); err != nil {
+					fmt.Printf("Error starting command: %v\n", err)
+				}
+			}
+		}
+	}()
+}
 
-    if err != nil {
-        log.Fatal(err)
-    }
-
+func main() {
+    onExit := func() {
+		now := time.Now()
+		fmt.Printf(`We exited at %d.`, now.UnixNano())
+	}
+	systray.Run(onReady, onExit)
 }
