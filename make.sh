@@ -13,11 +13,19 @@
 # 	go build -o gonotes 
 
 cd /home/trbritt/Desktop/projects/sticky_notes/driver
-go mod init main
-go mod tidy
-go build -o gonotes_driver
+if [ ! -f go.mod ]; then
+    go mod init main
+    go mod tidy
+fi  
+if [ ! -f gonotes_driver ]; then
+    go build -o gonotes_driver
+fi 
 cd ..
-go mod init main
-go mod tidy
-go build -o gonotes
+if [ ! -f go.mod ]; then
+    go mod init main
+    go mod tidy
+fi
+if [ ! -f gonotes ]; then
+    go build -o gonotes
+fi
 ./gonotes
