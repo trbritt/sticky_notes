@@ -60,7 +60,7 @@ func onReady() {
 				var terminal_cmd [6]string
 				terminal_cmd[0] = "/usr/bin/gnome-terminal"
 				terminal_cmd[1] = "--geometry"
-				terminal_cmd[2] = "90x30"
+				terminal_cmd[2] = "50x15"
 				terminal_cmd[3] = "--"
 				terminal_cmd[4] = currentWorkingDirectory+"/driver/gonotes_driver"
 				terminal_cmd[5] = "-id="+strconv.Itoa(accumulator)
