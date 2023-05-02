@@ -12,7 +12,7 @@
 # main:
 # 	go build -o gonotes 
 
-cd driver
+cd /home/trbritt/Desktop/projects/sticky_notes/driver
 go build -o gonotes_driver
 cd ..
 go build -o gonotes
