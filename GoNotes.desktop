@@ -1,0 +1,8 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+Terminal=false
+Exec=/home/trbritt/Desktop/projects/sticky_notes/make.sh
+Name=GoNotes
+Icon=/home/trbritt/Desktop/projects/sticky_notes/icon/clippy.png
