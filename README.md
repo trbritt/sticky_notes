@@ -4,6 +4,10 @@ Welcome to GoNotes! This is a nice terminal application written in `Go` that uti
 multiple terminals that act as digital 'sticky notes'. Each sticky note can be saved to and loaded from disk for easy retrieval (deletion of previous data
 in progress). It will open a manager accessible with the rest of the system tray icons that will allow you to load stickies as necessary, or stop the program if you want.
 
+![image](icon/two_stickies.png)
+
+*The rendered stickies in the desktop. Multiple editors per sticky are possible!*
+
 ## Prerequisites
 
 This software can only be run on Linux (sorry not sorry!). To install the prerequisites, you can follow the following commands for Debian-like systems:
