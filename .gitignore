@@ -4,3 +4,6 @@ go.*
 gonotes
 Cargo.lock
 target/
+autom4te.cache/
+configure
+Makefile

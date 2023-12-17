@@ -1,0 +1,22 @@
+.PHONY: all clean
+
+all: driver manager
+
+driver:
+	@cd driver && \
+	if [ ! -f go.mod ]; then \
+		go mod init main; \
+		go mod tidy; \
+	fi; \
+	go build -o gonotes_driver
+
+manager:
+	@cargo build
+	# Add other build steps as needed
+
+clean:
+	@cd driver && \
+	$(RM) go.mod go.sum gonotes_driver
+	@cd ..
+
+# Add other clean steps as needed
