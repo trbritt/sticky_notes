@@ -2,17 +2,21 @@
 
 all: driver manager
 
-driver:
+driver: 
 	@cd driver && \
 	if [ ! -f go.mod ]; then \
 		go mod init main; \
 		go mod tidy; \
 	fi; \
-	go build -o gonotes_driver
+	go build -o gonotes_driver 
+	@cd ..
 
 manager:
 	@cargo build
 	# Add other build steps as needed
+
+run:
+	@cargo run
 
 clean:
 	@cd driver && \
