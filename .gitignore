@@ -2,3 +2,5 @@ driver/go.*
 driver/gonotes_driver
 go.*
 gonotes
+Cargo.lock
+target/
