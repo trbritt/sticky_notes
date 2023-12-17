@@ -8,11 +8,11 @@ button:hover{
 }
 
 .hover-box {
-    background-color: rgba(0,0,0,0);
+    background-color: rgba(0,50,50,0.5);
     border-radius: 5px;
 }
 
-.hover-box:hover {
+/* .hover-box:hover {
     background-color: rgba(11, 133, 240, 0.3);
     border-radius: 5px;
-}
+} */

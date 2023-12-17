@@ -9,21 +9,38 @@ use glib::clone;
 use glib::closure_local;
 use chrono::{Datelike, Local, Weekday, NaiveDate};
 
-fn show_modal_window(parent: &gtk::ApplicationWindow, d: u32) {
-    let modal = gtk::Window::builder()
-    .title(format!("{d}"))
-    .modal(false)
-    .default_height(100)
-    .default_width(100)
-    .build();
+use std::process::Command;
+use std::io::{self,Write};
+use std::env;
+use std::path::PathBuf;
 
-    // modal.set_parent(parent);
-    let content_area = gtk::Text::builder()
-    .text("This is a modal!")
-    .build();
+fn show_modal_window(d: u32) { //use this to launch the sticky notes
+    let output = Command::new("/usr/bin/gnome-terminal")
+    .arg("--geometry")
+    .arg("100x200")
+    .arg("--")
+    .arg("/home/trbritt/Desktop/sticky_notes/driver/gonotes_driver")
+    .arg(format!("id={d}"))
+    .output()
+    .expect("Failed to execute stickynotes");
 
-    modal.set_child(Some(&content_area));
-    modal.present();
+    println!("status: {}", output.status);
+    io::stdout().write_all(&output.stdout).unwrap();
+    io::stderr().write_all(&output.stderr).unwrap();
+    // let modal = gtk::Window::builder()
+    // .title(format!("{d}"))
+    // .modal(false)
+    // .default_height(100)
+    // .default_width(100)
+    // .build();
+
+    // // modal.set_parent(parent);
+    // let content_area = gtk::Text::builder()
+    // .text("This is a modal!")
+    // .build();
+
+    // modal.set_child(Some(&content_area));
+    // modal.present();
 }
 
 #[inline]
@@ -61,6 +78,12 @@ fn get_days_in_month(year: i32, month: u32) -> u32 {
 }
 
 fn main() -> glib::ExitCode {
+    let mut go_build = Command::new("go");
+    go_build
+        .arg("build")
+        .arg("-o")
+        .arg(env::current_dir().unwrap().join("gonotes_driver"));
+    go_build.status().expect("Go build failed");
     // Create a new application
     let app = Application::builder().application_id(APP_ID).build();
 
@@ -209,7 +232,6 @@ fn build_ui(app: &Application) {
                     break;
                 }
             };
-            let window_copy = window.clone();
             button.connect_closure(
                 "clicked",
                 false,
@@ -217,7 +239,7 @@ fn build_ui(app: &Application) {
                     // Set the label to "Hello World!" after the button has been clicked on
                     button.set_label("Hello World!");
                     
-                    show_modal_window(&window_copy, d);
+                    show_modal_window(d);
                 }),
             );
             flowbox.append(&button);
