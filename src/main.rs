@@ -24,7 +24,6 @@ fn show_modal_window(d: u32) { //use this to launch the sticky notes
     .expect("Failed to execute stickynotes");
 
     println!("launching sticky id={}, status: {}", d,output.status);
-    println!("{}", format!("id={d}"));
     io::stdout().write_all(&output.stdout).unwrap();
     io::stderr().write_all(&output.stderr).unwrap();
     // let modal = gtk::Window::builder()

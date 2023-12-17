@@ -339,7 +339,11 @@ func (m model) View() string {
 func main() {
 	flag.Parse() //get the value of the ID, put it to the pointer
 	fname = tmp_dir + "gonotes_" + strconv.Itoa(*stickyIdPtr)+ ".gogz"//
-	window_title := "sticky #"+strconv.Itoa(*stickyIdPtr+1)
+	date_id := strconv.Itoa(*stickyIdPtr)
+	year_id := date_id[:4]
+	month_id := date_id[4:6]
+	day_id := date_id[6:]
+	window_title := "sticky - " + day_id +"/" + month_id + "/" + year_id
 	output := termenv.NewOutput(os.Stdout)
 	output.SetWindowTitle(window_title)
 	output.SetBackgroundColor(termenv.RGBColor("#010d0e"))
