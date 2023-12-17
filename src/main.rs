@@ -11,18 +11,20 @@ use chrono::{Datelike, Local, Weekday, NaiveDate};
 
 use std::process::Command;
 use std::io::{self,Write};
+use std::env;
 
 fn show_modal_window(d: u32) { //use this to launch the sticky notes
     let output = Command::new("/usr/bin/gnome-terminal")
     .arg("--geometry")
     .arg("100x200")
     .arg("--")
-    .arg("/home/trbritt/Desktop/sticky_notes/driver/gonotes_driver")
-    .arg(format!("id={d}"))
+    .arg(env::current_dir().unwrap().join("driver/gonotes_driver"))
+    .arg(format!("-id={d}"))
     .output()
     .expect("Failed to execute stickynotes");
 
     println!("launching sticky id={}, status: {}", d,output.status);
+    println!("{}", format!("id={d}"));
     io::stdout().write_all(&output.stdout).unwrap();
     io::stderr().write_all(&output.stderr).unwrap();
     // let modal = gtk::Window::builder()
@@ -232,8 +234,11 @@ fn build_ui(app: &Application) {
                 closure_local!(move |button: gtk::Button| {
                     // Set the label to "Hello World!" after the button has been clicked on
                     button.set_label("Hello World!");
-                    
-                    show_modal_window(d);
+                    let ystr: String = year.to_string().to_owned();
+                    let mstr: &str = &month.to_string();
+                    let dstr: &str = &d.to_string();
+                    let datestr = ystr + mstr + dstr;
+                    show_modal_window(datestr.parse::<u32>().unwrap());
                 }),
             );
             flowbox.append(&button);
