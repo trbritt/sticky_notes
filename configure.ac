@@ -11,6 +11,7 @@ AC_CONFIG_AUX_DIR(driver)
 
 # Checks for programs
 AC_CHECK_PROGS([GO], [go])
+AC_CHECK_PROGS([RUST], [rustc])
 
 # Checks for libraries
 # (Add any additional library checks as needed)
