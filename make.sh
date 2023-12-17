@@ -16,4 +16,4 @@ fi
 if [ ! -f gonotes ]; then
     go build -o gonotes
 fi
-./gonotes
+
