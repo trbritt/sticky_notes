@@ -11,8 +11,6 @@ use chrono::{Datelike, Local, Weekday, NaiveDate};
 
 use std::process::Command;
 use std::io::{self,Write};
-use std::env;
-use std::path::PathBuf;
 
 fn show_modal_window(d: u32) { //use this to launch the sticky notes
     let output = Command::new("/usr/bin/gnome-terminal")
@@ -24,7 +22,7 @@ fn show_modal_window(d: u32) { //use this to launch the sticky notes
     .output()
     .expect("Failed to execute stickynotes");
 
-    println!("status: {}", output.status);
+    println!("launching sticky id={}, status: {}", d,output.status);
     io::stdout().write_all(&output.stdout).unwrap();
     io::stderr().write_all(&output.stderr).unwrap();
     // let modal = gtk::Window::builder()
@@ -78,12 +76,7 @@ fn get_days_in_month(year: i32, month: u32) -> u32 {
 }
 
 fn main() -> glib::ExitCode {
-    let mut go_build = Command::new("go");
-    go_build
-        .arg("build")
-        .arg("-o")
-        .arg(env::current_dir().unwrap().join("gonotes_driver"));
-    go_build.status().expect("Go build failed");
+    
     // Create a new application
     let app = Application::builder().application_id(APP_ID).build();
 
@@ -110,6 +103,7 @@ fn load_css() {
     );
 }
 fn build_ui(app: &Application) {
+
      // Get the current local date
     let local_date = Local::now();
 
